@@ -1,0 +1,100 @@
+---
+title: "IDS_hackathon"
+author: "Sumit Anand"
+date: "2023-12-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(pacman)
+pacman::p_load(tidyverse, ggplot2, scales,kableExtra, gt, gtExtras, purrr, WDI, ggpubr, dplyr,gridExtra, grid,readr, haven, htmltools, plotly, reshape2)
+```
+
+
+```{r}
+setwd("C:/Users/sumit/OneDrive/Desktop/Hertie/semester 3/IDS/lab 6/hackathon-project-individual-sumitanand1203/survey")
+
+survey_data <- readRDS("meof_usa_survey_df.RDS")
+web_data<- readRDS("meof_usa_web_df.RDS")
+time_zones_data <-readRDS("time_zones.RDS")
+
+```
+
+
+
+```{r}
+
+# Recode topics
+topic_recode <- c("gender" = "Women", "ideologydems" = "Democrats", "ideologyreps" = "Republicans", "muslim" = "Muslim immigrants")
+
+
+# Prepare and process data for each vignette
+processed_vignettes <- lapply(1:8, function(vig_number) {
+  vig_topic <- paste0("vig_", vig_number, "_topic")
+  vig_message <- paste0("vig_", vig_number, "_sender_message")
+  vig_hateful <- paste0("vig_", vig_number, "_hateful")
+
+
+  # Select and transform the relevant columns
+survey_data %>%
+    filter(!is.na(!!sym(vig_hateful))) %>%
+    transmute(
+      full_message = paste(recode(!!sym(vig_topic), !!!topic_recode),!!sym(vig_message)),
+      hateful = !!sym(vig_hateful)
+    )
+})
+
+
+# Combine all vignettes into one dataframe
+combined_vignettes <- bind_rows(processed_vignettes)
+
+# Calculate mean and standard deviation of hatefulness ratings
+aggregated_data <- combined_vignettes %>%
+  group_by(full_message) %>%
+  summarise(
+    mean_hatefulness = mean(hateful, na.rm = TRUE),
+    sd_hatefulness = sd(hateful, na.rm = TRUE)
+  ) %>%
+  ungroup() %>% 
+  mutate(bar = 1)
+
+final_table <- combined_vignettes %>%
+  group_by(full_message) %>%
+  summarise(
+    average_hate = round(mean(hateful, na.rm = TRUE), 2),
+    sd_hate = round(sd(hateful, na.rm = TRUE), 2),
+    rating_data = list(hateful)
+  ) %>%
+  ungroup()
+
+
+#create a final gt table
+gt_table1 <- gt(final_table) %>%
+tab_header(title = md("Perceived hatefulness of social media post"),
+subtitle = "Respondents' ratings of the perceived level of hatefulness in each social media post, where a score of 1 indicates no hatefulness and a score of 5 signifies extreme hatefulness.") %>%
+tab_spanner(label = "Hatefulness ratings",
+columns = c(average_hate, sd_hate)) %>% 
+  cols_label(full_message = "Combined messages",
+              average_hate = "Mean", 
+              sd_hate = "SD",
+              rating_data = "Rating Distribution (1-5)")  %>%
+tab_source_note(source_note = "Source: Media Exposure and Opinion Formation") %>%
+                                 gt_plt_dist(rating_data, 
+                                             type="histogram", 
+              fill_color="lightblue",  # Adjust fill color here
+              line_color="black",      # Adjust line color here
+              fig_dim = c(10, 40),     # Adjust figure dimensions here (height, width in mm)
+              bw=0.5) %>%
+                                 tab_options(heading.background.color='lightblue')
+
+
+print(gt_table1)
+```
+
+
+```{r}
+
+
+```
+
+
