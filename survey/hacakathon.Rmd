@@ -7,22 +7,15 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(pacman)
-pacman::p_load(tidyverse, ggplot2, scales,kableExtra, gt, gtExtras, purrr, WDI, ggpubr, dplyr,gridExtra, grid,readr, haven, htmltools, plotly, reshape2)
+pacman::p_load(tidyverse, ggplot2, scales,kableExtra, gt, gtExtras, purrr, WDI, ggpubr, dplyr,gridExtra, grid,readr, haven, htmltools, plotly, reshape2, webshot, webshot2)
 ```
 
 
-```{r}
+```{r chunk-name, echo=TRUE, results='asis'}
 setwd("C:/Users/sumit/OneDrive/Desktop/Hertie/semester 3/IDS/lab 6/hackathon-project-individual-sumitanand1203/survey")
 
 survey_data <- readRDS("meof_usa_survey_df.RDS")
-web_data<- readRDS("meof_usa_web_df.RDS")
-time_zones_data <-readRDS("time_zones.RDS")
 
-```
-
-
-
-```{r}
 
 # Recode topics
 topic_recode <- c("gender" = "Women", "ideologydems" = "Democrats", "ideologyreps" = "Republicans", "muslim" = "Muslim immigrants")
@@ -87,8 +80,7 @@ tab_source_note(source_note = "Source: Media Exposure and Opinion Formation") %>
               bw=0.5) %>%
                                  tab_options(heading.background.color='lightblue')
 
-
-print(gt_table1)
+gtsave(gt_table1, "gttable.png", vwidth = 4500, vheight = 7000)
 ```
 
 
